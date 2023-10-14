@@ -4,6 +4,9 @@ on:
   push:
     branches: [ $default-branch ]
 
+env:
+  TSSASSAC_TARGET_DIR
+
 jobs:
   ts_sass_build_commit_job:
     runs-on: ubuntu-22.04
@@ -13,4 +16,4 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Clear destination
-        run: echo /$target-directory/*
+        run: ls
