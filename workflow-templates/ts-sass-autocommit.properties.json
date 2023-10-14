@@ -1,0 +1,10 @@
+{
+	"name": "Build & commit: TypeScript and Sass",
+	"description": "For a project made with TypeScript and Sass, this will build both and commit the resulting files to a directory in the target repository.",
+	"categories": [ "deployment" ],
+	"filePatterns": [
+		"package\\.json",
+		"webpack\\.config\\.js",
+		"^src/.*\\.ts$"
+	]
+}
