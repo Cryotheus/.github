@@ -1,19 +1,65 @@
 name: "Build & commit: TypeScript and Sass"
 
+#create a PAT with permissions to the target repo
+#and put it in the TSSASSAC_TARGET_TOKEN secret
+
 on:
   push:
     branches: [ $default-branch ]
 
+#configure these how you like them
 env:
-  TSSASSAC_TARGET_DIR
+  #the target directory inside the repo to put the built files
+  #cannot be empty or the root of the repo
+  TSSASSAC_TARGET_DIR: home
+  #the repo we are pushing the built files to
+  TSSASSAC_TARGET_REPO: Cryotheus/cryotheus.github.io
 
+#wher the magic happens
 jobs:
   ts_sass_build_commit_job:
     runs-on: ubuntu-22.04
     name: "Build & commit: TypeScript and Sass"
 
-    steps:
-      - uses: actions/checkout@v4
+    permissions:
+      contents: write
 
-      - name: Clear destination
-        run: ls
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: this_repo
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Run build script
+        working-directory: ${{github.workspace}}/this_repo
+        run: |
+          npm ci
+          npm run build
+
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          path: target_repo
+          repository: ${{env.TSSASSAC_TARGET_REPO}}
+
+      - name: Setup files for commit
+        working-directory: ${{github.workspace}}
+        run: |
+          mkdir -p target_repo/${{env.TSSASSAC_TARGET_DIR}}
+          rm -rf target_repo/${{env.TSSASSAC_TARGET_DIR}}/*
+          mv this_repo/dist/* target_repo/${{env.TSSASSAC_TARGET_DIR}}/
+
+      - name: Push the commit
+        working-directory: ${{github.workspace}}/target_repo
+        run: |
+          git config --unset-all http.https://github.com/.extraheader
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git remote set-url origin https://${{secrets.TSSASSAC_TARGET_TOKEN}}@github.com/${{env.TSSASSAC_TARGET_REPO}}.git
+          git add ${{env.TSSASSAC_TARGET_DIR}}/*
+          git commit -am "(Automated) '${{env.TSSASSAC_TARGET_DIR}}' pages update #${{github.run_number}}"
+          git push
